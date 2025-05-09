@@ -1,0 +1,41 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# CRISPResso2 Architecture
+
+CRISPResso2 is a software pipeline for analyzing genome editing outcomes from sequencing data.
+
+## Core Components
+
+- [CRISPResso2/CRISPRessoCORE.py](mdc:CRISPResso2/CRISPRessoCORE.py): Main analysis engine
+- [CRISPResso2/CRISPRessoShared.py](mdc:CRISPResso2/CRISPRessoShared.py): Common utilities
+- [CRISPResso2/CRISPRessoPlot.py](mdc:CRISPResso2/CRISPRessoPlot.py): Visualization functions
+
+## Analysis Modules
+
+- [CRISPResso2/CRISPRessoBatchCORE.py](mdc:CRISPResso2/CRISPRessoBatchCORE.py): Multiple experimental conditions
+- [CRISPResso2/CRISPRessoPooledCORE.py](mdc:CRISPResso2/CRISPRessoPooledCORE.py): Multiple amplicons from pooled experiments
+- [CRISPResso2/CRISPRessoWGSCORE.py](mdc:CRISPResso2/CRISPRessoWGSCORE.py): Whole genome sequencing sites
+- [CRISPResso2/CRISPRessoCompareCORE.py](mdc:CRISPResso2/CRISPRessoCompareCORE.py): Compare editing between samples
+- [CRISPResso2/CRISPRessoAggregateCORE.py](mdc:CRISPResso2/CRISPRessoAggregateCORE.py): Aggregate results
+
+## Performance-Critical Components
+
+- [CRISPResso2/CRISPResso2Align.pyx](mdc:CRISPResso2/CRISPResso2Align.pyx): Fast sequence alignment (Cython)
+- [CRISPResso2/CRISPRessoCOREResources.pyx](mdc:CRISPResso2/CRISPRessoCOREResources.pyx): Core computational resources (Cython)
+- [CRISPResso2/CRISPRessoMultiProcessing.py](mdc:CRISPResso2/CRISPRessoMultiProcessing.py): Parallel processing
+
+## Utility Scripts
+
+- [scripts/filterReadsOnSequencePresence.py](mdc:scripts/filterReadsOnSequencePresence.py): Filter reads with specific sequences
+- [scripts/countHighQualityBases.py](mdc:scripts/countHighQualityBases.py): Quality assessment
+
+## Extensions
+
+- [tools/chopchop/](mdc:tools/chopchop): CHOPCHOP integration for guide RNA design
+
+## Entry Points
+
+All modules have a `main()` function that serves as the entry point registered in [setup.py](mdc:setup.py).

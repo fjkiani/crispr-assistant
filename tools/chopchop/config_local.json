@@ -1,0 +1,20 @@
+{
+  "PATH": {
+    "PRIMER3": "./primer3_core",
+    "BOWTIE": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/tools/chopchop/bowtie/bowtie",
+    "TWOBITTOFA": "./twoBitToFa",
+    "TWOBIT_INDEX_DIR": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/genomeFiles",
+    "BOWTIE_INDEX_DIR": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/genomeFiles",
+    "ISOFORMS_INDEX_DIR": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/genomeFiles",
+    "ISOFORMS_MT_DIR": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/genomeFiles",
+    "GENE_TABLE_INDEX_DIR": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/genomeFiles"
+  },
+  "THREADS": 1,
+  "Human": {
+    "hg38": {
+      "twobitfile": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/genomeFiles/hg38.2bit",
+      "bowtie": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/genomeFiles/GRCh38_noalt_as",
+      "gff": "/Users/fkiani/Desktop/FJK/Developent/CRISPResso2-master/genomeFiles/gencode.v44.annotation.gtf"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# CHOPCHOP Integration with CRISPResso2
+
+CRISPResso2 has been extended with CHOPCHOP for guide RNA design.
+
+## Key Components
+
+- [tools/chopchop/chopchop.py](mdc:tools/chopchop/chopchop.py): Core CHOPCHOP script for guide RNA design
+- [tools/chopchop/chopchop_integration.py](mdc:tools/chopchop/chopchop_integration.py): Integration script for CRISPResso2
+- [tools/chopchop/example_workflow.py](mdc:tools/chopchop/example_workflow.py): Example workflow combining guide design and analysis
+
+## Workflow
+
+The typical workflow involves:
+
+1. Use CHOPCHOP to design optimal guide RNAs
+2. Run experiments with the selected guides
+3. Analyze editing outcomes with CRISPResso2
+
+## Usage Example
+
+```python
+# Design guides
+python tools/chopchop/chopchop_integration.py --genome hg38 --target BRCA1 --output chopchop_results
+
+# Analyze editing outcomes
+CRISPResso --fastq_r1 sample.fastq --amplicon_seq ACTGACTG...
+```
+
+For a complete end-to-end workflow:
+
+```python
+python tools/chopchop/example_workflow.py --genome hg38 --target BRCA1 --fastq_r1 sample.fastq --output workflow_results
+```
+
+See [tools/chopchop/README_CRISPResso2.md](mdc:tools/chopchop/README_CRISPResso2.md) for more details.
