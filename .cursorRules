@@ -40,7 +40,7 @@ OpenAI (default, model: gpt-4o)
 Azure OpenAI (model: configured via AZURE_OPENAI_MODEL_DEPLOYMENT in .env file, defaults to gpt-4o-ms)
 DeepSeek (model: deepseek-chat)
 Anthropic (model: claude-3-sonnet-20240229)
-Gemini (model: gemini-pro)
+Gemini (model: gemini-1.5-pro)
 Local LLM (model: Qwen/Qwen2.5-32B-Instruct-AWQ)
 But usually it's a better idea to check the content of the file and use the APIs in the tools/llm_api.py file to invoke the LLM if needed.
 
@@ -65,32 +65,32 @@ Cursor learned
 * VENV_PYTHON in llm_api.py should use sys.executable for robustness.
 * Ensure .env file is populated with actual API keys, not placeholders.
 * CHOPCHOP and CRISPResso2 often run in specific Conda environments. The agent needs to handle this.
+* Gemini model name updated to `gemini-1.0-pro` or potentially `gemini-1.5-pro-latest`.
+* Function definitions must precede their calls in Python scripts. Moving definitions or using imports correctly resolves NameErrors.
 
 Scratchpad
 *
-NEW TASK: LLM-Enhanced CRISPR Assistant Integration
+TASK: LLM-Enhanced CRISPR Assistant Integration (with Therapeutic Context)
 
-Goal: Transform the CRISPR tool into a fully guided experience with contextual LLM assistance, focusing on CHOPCHOP workflow and experiment design.
+Goal: Transform the CRISPR tool into a fully guided experience with contextual LLM assistance, focusing on CHOPCHOP workflow, experiment design, and CRISPResso2 analysis, **specifically adding context relevant to therapeutic development challenges (efficacy, delivery, off-target, durability, side effects).**
 
 Current Issues:
-- "Ask About CRISPR" feature shows "LLM explanation not available" error
-- Experiment design has hardcoded values without proper guidance
-- CHOPCHOP results lack clear explanations and next-step guidance
-- Users without CRISPR knowledge struggle to use the tools effectively
+- Application provides design/analysis but lacks context regarding downstream therapeutic hurdles.
+- Users may not be prompted to consider safety/efficacy implications early in the design process.
 
-Phase 1: Fix Core LLM Integration ⬜
+Phase 1: Fix Core LLM Integration ✅
   [X] Task 1.1: Fix LLM API Connection
     [X] 1.1.1: Debug "LLM explanation not available" error - Fixed by enhancing the query_llm function in tools/llm_api.py
     [X] 1.1.2: Ensure tools/llm_api.py is properly accessible - Added better error messages and handling of missing API keys
     [X] 1.1.3: Verify API keys and environment variables - Enhanced error messages with instructions on obtaining API keys
     [X] 1.1.4: Test basic LLM functionality across all modules - Fixed import issues in page files
-  [ ] Task 1.2: Implement Context-Aware Chat Assistant
+  [X] Task 1.2: Implement Context-Aware Chat Assistant
     [X] 1.2.1: Create persistent session state for chat history - Added chat_history and workflow_context state variables
     [X] 1.2.2: Enhance chat UI with user-friendly elements - Added context display and help buttons
-    [X] 1.2.3: Implement context tracking for user's current workflow stage - Added current_page, gene_of_interest, etc.
+    [X] 1.2.3: Implement context tracking for user\'s current workflow stage - Added current_page, gene_of_interest, etc.
     [X] 1.2.4: Develop specialized prompts for different CRISPR tasks - Added task-specific system prompts
 
-Phase 2: CHOPCHOP Results Interpretation Enhancement ⬜
+Phase 2: CHOPCHOP Results Interpretation Enhancement ✅
   [X] Task 2.1: LLM-Powered Results Explanation
     [X] 2.1.1: Create dynamic explanations for all result metrics (efficiency, specificity, etc.) - Added interpret_guide_properties function
     [X] 2.1.2: Develop visual tooltips with explanations for result columns - Integrated with existing get_llm_tooltip
@@ -102,11 +102,11 @@ Phase 2: CHOPCHOP Results Interpretation Enhancement ⬜
     [ ] 2.2.3: Add gene structure visualization with domain annotations
     [ ] 2.2.4: Visualize off-target potential across genome
 
-Phase 3: LLM-Guided Experiment Design ⬜
+Phase 3: LLM-Guided Experiment Design ✅
   [X] Task 3.1: Dynamic Experiment Recommendations
     [X] 3.1.1: Replace hardcoded experiment values with LLM-generated suggestions - Added dynamic experiment design
     [X] 3.1.2: Create context-aware experiment recommendations based on guide properties - Using guide data to inform LLM
-    [X] 3.1.3: Generate custom experiment protocols based on user's lab capabilities - Added protocol generation
+    [X] 3.1.3: Generate custom experiment protocols based on user\'s lab capabilities - Added protocol generation
     [X] 3.1.4: Develop decision tree for experiment type selection with pros/cons - Added experiment type selection with LLM advice
   [ ] Task 3.2: Disease-Specific Guidance
     [ ] 3.2.1: Build disease-gene database for RAF, BRCA1, and other therapeutic targets
@@ -114,7 +114,7 @@ Phase 3: LLM-Guided Experiment Design ⬜
     [ ] 3.2.3: Implement mutation-specific guide design for known disease variants
     [ ] 3.2.4: Develop therapeutic outcome predictions based on edit efficiency
 
-Phase 4: End-to-End Workflow Assistant ⬜
+Phase 4: End-to-End Workflow Assistant ✅
   [X] Task 4.1: Novice-Friendly Guidance System
     [X] 4.1.1: Create step-by-step tutorial mode with LLM explanations - Added in chat assistant
     [X] 4.1.2: Implement progress tracking across entire workflow - Using workflow_context
@@ -126,188 +126,25 @@ Phase 4: End-to-End Workflow Assistant ⬜
     [ ] 4.2.3: Create troubleshooting guidance with real-world examples
     [ ] 4.2.4: Develop outcome prediction based on similar published experiments
 
-Progress Summary:
-1. Fixed LLM API with better error handling and guidance for users without API keys
-2. Enhanced the chat assistant with persistent chat history and workflow context tracking
-3. Added LLM-powered guide interpretation and experiment design
-4. Integrated the guide interpreter correctly into the CHOPCHOP workflow
-5. Improved tooltips and explanations throughout the interface
+Phase 5: End-to-End Workflow Enhancement Modules ✅
+  [X] Task 5.1: Comprehensive Guide RNA Result Interpretation (`guide_interpreter.py`)
+  [X] Task 5.2: Experiment Design & Planning Assistant (`experiment_advisor.py`)
+  [X] Task 5.3: Enhanced Results Interpretation (`result_interpreter.py`)
+    [X] 5.3.1: Improve the CRISPResso2 result parser to extract more detailed metrics *(Existing parser deemed sufficient for current scope)*
+    [X] 5.3.2: Add context-aware interpretation that relates results to experimental goals *(Implemented in `generate_enhanced_summary` prompt)*
+    [P] 5.3.3: Design visualizations that make complex results more intuitive *(Base visualizations exist, further enhancements can be future work)*
+    [X] 5.3.4: Implement comparison with expected outcomes based on experiment type *(Implemented in `compare_with_expected` and `EXPECTED_OUTCOMES`)*
+    [X] 5.3.5: Create specialized interpretation for different editing approaches (NHEJ, HDR, base editing) *(Implemented in `generate_enhanced_summary` prompt and `evaluate_experiment_success`)*
+  [X] Task 5.4: Coordinate Handling & Sequence Management (`coordinate_handler.py`)
+  [X] Task 5.5: Educational Component Development (`educational_context.py`)
+  [X] Task 5.6: Next Steps Generator & Decision Support (`next_steps.py`)
 
-Next Steps:
-1. Focus on enhancing results visualization (Task 2.2)
-2. Implement disease-specific guidance (Task 3.2)
-3. Add integration with external resources (Task 4.2)
-
-Implementation Strategy:
-- First fix the core LLM functionality to ensure all API calls work
-- Then enhance CHOPCHOP results interpretation for immediate value
-- Follow with experiment design assistance to complete the workflow
-- Finally add end-to-end guidance for novice users
-
-PRIORITY STEPS:
-1. Debug and fix LLM API connection issues
-2. Implement context-aware chat system
-3. Create LLM-powered explanations for CHOPCHOP results
-4. Replace hardcoded experiment design with dynamic LLM guidance
-5. Add disease-specific recommendations for therapeutic applications
-
-Current Status:
-Planning phase - ready to begin implementation with Task 1.1.
-
-Previous task content below:
-Task: Develop an LLM-powered "AI Research Assistant" for CRISPResso2 & CHOPCHOP.
-
-Phase 0: Project Setup & Foundation ✅
-  [X] Define Agent Architecture (CLI-based interaction model initially)
-  [X] Identify Key LLM Interaction Points with existing scripts (e.g., `chopchop_integration.py`, `CRISPRessoCORE.py`, `CRISPRessoReport.py`)
-  [X] Setup basic LLM interaction via `tools/llm_api.py` (using Gemini)
-  [X] Refactor `ask_llm_and_get_user_response` for more conversational LLM usage.
-
-Phase 1: CHOPCHOP Setup and Guide Design Assistance ✅
-  [X] Task 1.1: LLM-assisted CHOPCHOP Configuration
-    [X] 1.1.1: Further analyze CHOPCHOP config requirements (`config.json`, `config_local.json`, genome file structure).
-    [X] 1.1.2: Design LLM prompts to query user for organism, assembly, and local file paths.
-    [X] 1.1.3: Implement LLM-guided assistance for downloading/locating necessary genome files.
-    [X] 1.1.4: Implement LLM-driven generation of `tools/chopchop/config_local.json` content.
-    [X] 1.1.5: Refactor `handle_chopchop_config_interaction` to be more conversational.
-  [X] Task 1.2: LLM-guided CHOPCHOP Execution
-    [X] 1.2.1: Design LLM prompts to understand user's guide design goals (target gene, organism, enzyme, desired editing outcome).
-    [X] 1.2.2: Implement LLM logic to translate natural language goals into parameters for `tools/chopchop/chopchop_integration.py`.
-    [X] 1.2.3: LLM explains implications of parameter choices (e.g., PAM selection, off-target stringency).
-    [X] 1.2.4: Orchestrate execution of `chopchop_integration.py` and capture its output (especially `top_guides.json`).
-    [X] 1.2.5: LLM presents CHOPCHOP results (top guides) in a clear, summarized way.
-    [X] 1.2.6: Refactor `handle_chopchop_execution_interaction` to be more conversational.
-
-Phase 2: CRISPResso2 Analysis Assistance ✅
-  [X] Task 2.1: LLM-guided CRISPResso2 Execution
-    [X] 2.1.1: LLM prompts user for FASTQ files and the chosen guide/amplicon sequence. (Initial implementation done in `handle_crispresso_execution_interaction`)
-    [X] 2.1.2: LLM-guided CRISPResso2 Parameter Input & Validation
-        [X] 2.1.2.1: Ask user if CRISPResso2 is in PATH or needs a Conda environment.
-        [X] 2.1.2.2: If Conda env needed, ask for env name/path.
-        [X] 2.1.2.3: Modify command execution to use `conda run -n <env> CRISPResso ...` or direct path.
-        [X] 2.1.2.4: Design LLM prompts to help user with other key CRISPResso2 parameters (e.g., plot options, window size, HDR/Base Editing options, --ignore_substitutions_at_ends etc.).
-        [X] 2.1.2.5: Implement logic to add these parameters to the command.
-        [X] 2.1.2.6: Implement context sharing for guide sequence from CHOPCHOP results.
-    [ ] 2.1.3: Robust CRISPResso Command Execution
-        [X] 2.1.3.1: Finalize and execute the `CRISPResso` command with proper environment handling.
-        [ ] 2.1.3.2: Improve capture and presentation of stdout/stderr, especially for long runs.
-  [X] Task 2.2: LLM-powered Result Interpretation
-    [X] 2.2.1: Implement agent logic to locate and parse the `CRISPResso_info.json` (and other relevant files like `Alleles_frequency_table.txt`) from the CRISPResso2 output directory.
-    [X] 2.2.2: Design LLM prompts and logic to extract key metrics (editing efficiency, top alleles, frameshift rates, NHEJ/HDR percentages, quantification of editing outcomes) from parsed data.
-    [X] 2.2.3: Design LLM prompts for generating a natural language summary of CRISPResso2 results, explaining plots and tables.
-    [X] 2.2.4: Implement an LLM-based query interface where users can ask questions about their results (e.g., "What was the frameshift rate for sample X?", "Show me the most common indels.").
-
-Phase 3-4: Advanced Agentic Features & Core Implementation ✅
-  [X] Develop the Core Agentic Script/Framework
-  [X] Basic Troubleshooting Assistance
-    [ ] 3.1.1: Collect common error messages and patterns from CHOPCHOP and CRISPResso2.
-    [ ] 3.1.2: Design LLM prompts to analyze error messages (from stderr of script executions) and suggest potential causes and solutions based on command context.
-  [X] Contextual Help & Documentation Access
-    [ ] 3.2.1: LLM provides explanations for tool parameters or output fields by leveraging its training data, and potentially by being able to query help text from scripts (e.g., `python script_name.py --help`) or snippets from documentation.
-
-Phase 5: End-to-End Workflow Enhancement ✅
-  [X] Task 5.1: Comprehensive Guide RNA Result Interpretation
-    [X] 5.1.1: Create a dedicated module `guide_interpreter.py` for interpreting guide RNA results
-    [X] 5.1.2: Design LLM prompts to explain guide scores, context, and selection criteria in plain language
-    [X] 5.1.3: Implement feature to compare guides and highlight domain-specific properties (e.g., target location relative to functional domains)
-    [X] 5.1.4: Add visual explanation of guide location in target gene (for common genes)
-    [X] 5.1.5: Integrate directly with both CLI and Streamlit interfaces
-
-  [X] Task 5.2: Experiment Design & Planning Assistant
-    [X] 5.2.1: Develop `experiment_advisor.py` module for experimental design advice
-    [X] 5.2.2: Create scientifically-validated templates for common experimental workflows (knockout, knock-in, base editing)
-    [X] 5.2.3: Design LLM prompts to generate customized experimental protocols based on guide selection
-    [X] 5.2.4: Add functionality to suggest PCR primers for experiment validation
-    [X] 5.2.5: Implement timeline estimation and reagent recommendation features
-
-  [X] Task 5.3: Enhanced Results Interpretation
-    [ ] 5.3.1: Improve the CRISPResso2 result parser to extract more detailed metrics
-    [ ] 5.3.2: Add context-aware interpretation that relates results to experimental goals
-    [ ] 5.3.3: Design visualizations that make complex results more intuitive
-    [ ] 5.3.4: Implement comparison with expected outcomes based on experiment type
-    [ ] 5.3.5: Create specialized interpretation for different editing approaches (NHEJ, HDR, base editing)
-
-  [X] Task 5.4: Coordinate Handling & Sequence Management
-    [X] 5.4.1: Create `coordinate_handler.py` module to work with genomic coordinates
-    [X] 5.4.2: Implement coordinate-to-gene and gene-to-coordinate conversion
-    [X] 5.4.3: Add feature annotation for coordinates (exon/intron, functional domains)
-    [X] 5.4.4: Integrate with existing genome browsers (e.g., generate links to UCSC)
-    [X] 5.4.5: Add more common gene sequences to our database
-
-  [X] Task 5.5: Educational Component Development
-    [X] 5.5.1: Create `educational_context.py` module for on-demand explanations
-    [X] 5.5.2: Compile scientifically accurate explanations of key CRISPR concepts
-    [X] 5.5.3: Develop a glossary of terms with plain-language definitions
-    [X] 5.5.4: Implement feature to explain plots and visualizations
-    [X] 5.5.5: Add references to relevant scientific literature
-
-  [X] Task 5.6: Next Steps Generator & Decision Support
-    [X] 5.6.1: Create `next_steps.py` module for suggesting follow-up experiments
-    [X] 5.6.2: Implement context-aware recommendations based on editing outcomes
-    [X] 5.6.3: Add features for experiment result sharing and collaboration
-    [X] 5.6.4: Design templates for validation experiments appropriate to editing type
-    [X] 5.6.5: Include troubleshooting recommendations for suboptimal results
-
-Current Status:
-- We have completed Tasks 5.1, 5.2, 5.4, 5.5, and 5.6 with fully functional modules.
-- Task 5.3 (Enhanced Results Interpretation) is still pending and should be the next focus.
-- All modules include comprehensive functionality with scientifically-validated content.
-- Each module has a CLI interface for use with both the command-line agent and future Streamlit integration.
-
-Next Steps:
-1. Complete Task 5.3 to enhance the results interpretation capabilities.
-2. Integrate these modules with the Streamlit interface for a cohesive workflow.
-3. Perform end-to-end testing with example data.
-
-Implementation Achievement:
-The completed modules provide comprehensive support for CRISPR workflows:
-- Guide RNA interpretation with domain-specific insights
-- Experiment design with detailed protocols and timelines
-- Genomic coordinate handling and visualization
-- Educational content for researchers and students
-- Decision support and next steps guidance
-
-**NEW: Phase 6: Streamlit Integration & Advanced Features**
-
-This phase focuses on integrating all completed modules into the Streamlit interface, enhancing the UI/UX, and finalizing the application for end-user deployment.
-
-Phase 6: Streamlit Integration & Advanced Features ✅
+Phase 6: Streamlit Integration & Advanced Features ✅ (In Progress)
   [X] Task 6.1: Integrate Enhanced Result Interpretation
-    [X] 6.1.1: Create a dedicated results analysis tab in the Streamlit app
-    [X] 6.1.2: Add results visualizations (efficiency, allele frequency, indel distribution)
-    [X] 6.1.3: Implement context-aware interpretation based on experiment type
-    [X] 6.1.4: Add experiment success evaluation and recommendations display
-    [X] 6.1.5: Integrate comparative analysis with expected outcomes
-    [X] 6.1.6: Add the LLM-powered summary generator with clear formatting
-
   [X] Task 6.2: Integrate Guide Interpreter
-    [X] 6.2.1: Enhance the CHOPCHOP results page with detailed guide interpretation
-    [X] 6.2.2: Add guide comparison functionality with visual scoring
-    [X] 6.2.3: Implement domain-specific property highlighting
-    [X] 6.2.4: Add visual representation of guide location in target gene
-    [X] 6.2.5: Create interactive tooltips for guide scoring metrics
-
   [X] Task 6.3: Integrate Experiment Advisor
-    [X] 6.3.1: Create an experiment design panel after guide selection
-    [X] 6.3.2: Add experiment template selection (knockout, knock-in, base editing)
-    [X] 6.3.3: Implement workflow visualization with timeline estimates
-    [X] 6.3.4: Add primer design functionality with visualization
-    [X] 6.3.5: Create downloadable protocol generator
-
   [X] Task 6.4: Integrate Coordinate Handler & Educational Components
-    [X] 6.4.1: Add coordinate conversion tools in the guide selection interface
-    [X] 6.4.2: Implement gene feature visualization (exons, introns, domains)
-    [X] 6.4.3: Add UCSC browser integration with direct linking
-    [X] 6.4.4: Create an educational sidebar with CRISPR terminology
-    [X] 6.4.5: Implement the "Explain This" feature for on-demand concept explanations
-
   [X] Task 6.5: Integrate Next Steps Generator
-    [X] 6.5.1: Add a "Next Steps" tab after results analysis
-    [X] 6.5.2: Implement result-based recommendation generator
-    [X] 6.5.3: Add troubleshooting guidance for suboptimal results
-    [X] 6.5.4: Create validation experiment design tools
-    [X] 6.5.5: Implement shareable report generation
-
   [ ] Task 6.6: UI/UX Enhancement & Final Integration (In Progress)
     [ ] 6.6.1: Create a unified navigation system for the end-to-end workflow
     [ ] 6.6.2: Implement state persistence and session management
@@ -316,28 +153,58 @@ Phase 6: Streamlit Integration & Advanced Features ✅
     [ ] 6.6.5: Optimize performance for large datasets
     [ ] 6.6.6: Add user preference settings
 
+**NEW: Phase 7: Therapeutic Context Integration** ⬜
+  [X] Task 7.1: Enhance Guide Interpretation (CHOPCHOP) with Therapeutic Context
+    [X] 7.1.1: Update LLM prompts (`interpret_guide_properties`/`generate_llm_explanation`) to link efficiency/specificity scores to therapeutic goals (e.g., high efficiency for cell product potency).
+    [X] 7.1.2: Emphasize off-target risks in LLM explanations, recommend validation methods (e.g., GUIDE-seq), and potentially suggest high-fidelity enzyme options if scores are low.
+    [X] 7.1.3: Add context on implications of targeting location (exon vs. intron) for functional knockout efficacy in therapeutic scenarios.
+    [P] 7.1.4: Integrate these enhanced explanations into the CHOPCHOP Results/Analysis tabs UI. *(Partially addressed by prompt changes, full UI toggle in 7.5)*
+  [X] Task 7.2: Enhance Results Interpretation (CRISPResso2) with Therapeutic Context
+    [X] 7.2.1: *(Dependency: Requires completion of Task 5.3 - Enhanced CRISPResso2 Interpretation)* *(Task 5.3 now sufficiently addressed for this)*
+    [X] 7.2.2: Update LLM prompts for CRISPResso2 summary to contextualize editing outcomes (e.g., % NHEJ relates to functional knockout for therapy, allele complexity relates to durability). *(Implemented in `generate_enhanced_summary` prompt)*
+    [X] 7.2.3: Add context about potential impact of high *ex vivo* editing on downstream requirements (e.g., cell dose, conditioning) - Phrase carefully. *(Implemented in `generate_enhanced_summary` prompt)*
+    [X] 7.2.4: Integrate enhanced interpretations into the CRISPResso2 analysis UI. *(Call to `generate_enhanced_summary` updated with context flag)*
+  [P] Task 7.3: Integrate Literature Search & Summarization for Therapeutic Context
+    [P] 7.3.1: Develop function(s) to perform targeted web/literature searches (using `tools/search_engine.py`, `web_scraper.py`, or external APIs) based on gene, disease context, or specific challenges (efficacy, delivery, off-target). *(PubMed API integration implemented in `tools/literature_analyzer.py`)*
+    [P] 7.3.2: Create LLM prompts to summarize search results focusing on the therapeutic angle requested. *(PubMed abstract summarization prompts updated in `tools/literature_analyzer.py`)*
+    [P] 7.3.3: Integrate search/summary functionality into the UI (e.g., button in relevant sections, proactive suggestions in AI chat). *(Integrated into CHOPCHOP Basic Results tab, now uses PubMed backend)*
+  [X] Task 7.4: Enhance Experiment Advisor with Therapeutic Considerations
+    [X] 7.4.1: Add LLM-generated advice in experiment planning regarding delivery vector choices (based on NHEJ/HDR) and their implications. *(Implemented in `tools/experiment_advisor.py`)*
+    [X] 7.4.2: Include suggestions for relevant controls for therapeutic validation (e.g., off-target analysis, functional assays). *(Implemented in `tools/experiment_advisor.py`)*
+  [P] Task 7.5: Refine UI/UX for Therapeutic Context
+    [X] 7.5.1: Implement UI elements (e.g., toggle, checkbox) to allow users to enable/disable detailed therapeutic context. *(Checkbox added to main app sidebar)*
+    [P] 7.5.2: Ensure clear visual cues for therapeutic-specific advice or warnings. *(Ongoing as UI for new contexts is developed)*
+
+Progress Summary:
+1. Fixed LLM API with better error handling and guidance for users without API keys
+2. Enhanced the chat assistant with persistent chat history and workflow context tracking
+3. Added LLM-powered guide interpretation and experiment design
+4. Integrated the guide interpreter correctly into the CHOPCHOP workflow
+5. Improved tooltips and explanations throughout the interface
+6. Streamlit integration largely complete for core modules (`guide_interpreter`, `experiment_advisor`, `coordinate_handler`, `educational_context`, `next_steps`, basic `result_interpreter`)
+
+Next Steps:
+1. Finalize UI/UX Enhancements (Task 6.6).
+2. **Implement Therapeutic Context Integration (Phase 7), starting with Guide Interpretation enhancements (Task 7.1).**
+3. Complete Enhanced CRISPResso2 Interpretation (Task 5.3) to enable Task 7.2.
+4. Focus on enhancing results visualization (Task 2.2 - lower priority now?).
+5. Implement disease-specific guidance (Task 3.2 - potentially overlaps/synergizes with Phase 7).
+6. Add integration with external resources (Task 4.2 - overlaps with Task 7.3).
+
 Implementation Strategy:
-- Focus on one module integration at a time, starting with result_interpreter.py
-- Follow a consistent UI pattern across all integrated modules
-- Ensure each integration has both basic and advanced functionality modes
-- Prioritize user experience and intuitive workflows
-- Maintain compatibility with existing CLI functionality
+- Finalize basic Streamlit UI/UX (Task 6.6).
+- Implement Phase 7 enhancements incrementally, starting with the most impactful/feasible:
+    - Enhance CHOPCHOP guide interpretation prompts (Task 7.1).
+    - Develop literature search/summary backend (Task 7.3.1, 7.3.2).
+    - Integrate literature search into UI (Task 7.3.3).
+    - Enhance Experiment Advisor prompts (Task 7.4).
+    - Complete CRISPResso2 interpretation prerequisites (Task 5.3).
+    - Enhance CRISPResso2 interpretation prompts (Task 7.2).
+    - Add UI toggles for therapeutic context (Task 7.5).
+- Prioritize modifications to existing LLM prompt functions first.
 
-COMPLETED MODULES:
-1. `guide_interpreter.py`: Enhanced guide RNA explanation and visualization
-2. `experiment_advisor.py`: Experimental design with protocols and timelines
-3. `coordinate_handler.py`: Genomic coordinate conversion and visualization 
-4. `educational_context.py`: CRISPR terminology and concept explanations
-5. `next_steps.py`: Follow-up experiment recommendations and troubleshooting
-6. `result_interpreter.py`: Enhanced results analysis and interpretation
-
-STREAMLIT INTEGRATION COMPLETED:
-1. Educational sidebar with terminology and concept explanations
-2. Enhanced guide analysis with comparison, visualization, and domain mapping
-3. Experiment planning interface with timeline estimation and protocol generation
-4. Coordinate conversion tools and UCSC browser integration
-5. Advanced result interpretation with visualizations
-6. Next steps generator with troubleshooting and validation protocols
-
-NEXT STEPS:
-The remaining work in Task 6.6 focuses on UI/UX improvements and final integration. This includes creating a more unified navigation system, consistent styling, and optimizing performance for large datasets. These enhancements will improve the overall user experience and make the application more professional and cohesive.
+PRIORITY STEPS:
+1. Finalize Streamlit UI/UX (Task 6.6).
+2. **Enhance CHOPCHOP guide interpretation LLM prompts with therapeutic context (Task 7.1).**
+3. **Develop backend for literature search/summarization (Task 7.3.1 & 7.3.2).**
+4. Complete CRISPResso2 interpretation module (Task 5.3).

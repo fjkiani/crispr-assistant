@@ -1610,109 +1610,71 @@ Assistant:
 def main():
     """Main entry point for the Streamlit app"""
     
-    # Initialize session state
+    # Initialize session state for all pages
     init_session_state()
     
-    # Set up page config (must be called only once, at the start)
-    st.set_page_config(
-        page_title="AI Research Assistant for CRISPR",
-        page_icon="🧬",
-        layout="wide"
-    )
-    
-    # Add custom CSS for styling
-    st.markdown("""
-    <style>
-    .main-header {
-        font-size: 2.5rem;
-        color: #1E88E5;
-        margin-bottom: 1rem;
-    }
-    .subheader {
-        font-size: 1.8rem;
-        color: #0D47A1;
-        margin-bottom: 0.8rem;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Create educational sidebar if available
-    create_educational_sidebar()
-    
-    # Display home page
-    display_home_page()
+    # Apply custom CSS
+    apply_custom_css()
 
-def display_home_page():
-    """Display the home page content"""
+    # --- Global Settings in Sidebar ---
+    st.sidebar.subheader("Global Analysis Settings")
+    if 'show_therapeutic_context' not in st.session_state:
+        st.session_state.show_therapeutic_context = False # Default to False
     
-    st.markdown('<div class="main-header">AI Research Assistant for CRISPR Genome Editing</div>', unsafe_allow_html=True)
+    st.session_state.show_therapeutic_context = st.sidebar.checkbox(
+        "Enable Therapeutic Development Context", 
+        value=st.session_state.show_therapeutic_context,
+        help="Show additional LLM-generated context related to therapeutic development challenges (efficacy, safety, delivery, etc.) in analysis sections.",
+        key="therapeutic_context_toggle"
+    )
+    st.sidebar.markdown("---") # Separator
+    # --- End Global Settings ---
+
+    # Page Navigation
+    st.sidebar.title("Navigation")
+    # Ensure PAGES is defined correctly before this point, e.g., at the top of the file or imported
+    page_options = list(PAGES.keys())
+    # Get current page from query params or default to first page
+    query_params = st.experimental_get_query_params()
+    current_page_key = query_params.get("page", [page_options[0]])[0] if page_options else None
     
-    # Introduction with custom styling
-    st.markdown("""
-    <div style='padding: 20px; border-radius: 10px; background-color: #f0f8ff; margin-bottom: 30px;'>
-    Welcome to the AI Research Assistant for CRISPR Genome Editing. This tool helps you design guides 
-    with CHOPCHOP and analyze editing outcomes with CRISPResso2, with AI assistance at every step.
-    </div>
-    """, unsafe_allow_html=True)
+    # Set default index for radio button
+    default_index = page_options.index(current_page_key) if current_page_key in page_options else 0
     
-    # Main features in columns with enhanced styling
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("""
-        <div style='padding: 20px; border-radius: 10px; border: 1px solid #e1e4e8;'>
-        <h2 style='color: #1E88E5;'>🧬 CHOPCHOP Guide Design</h2>
-        <ul style='list-style-type: none; padding-left: 0;'>
-        <li>✓ AI-guided configuration of CHOPCHOP</li>
-        <li>✓ Intelligent guide RNA selection</li>
-        <li>✓ Enhanced visualization and interpretation</li>
-        <li>✓ Experimental design recommendations</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-        st.page_link('pages/CHOPCHOP_Guide_Design.py', label="Go to CHOPCHOP Guide Design", icon="🧬")
-    
-    with col2:
-        st.markdown("""
-        <div style='padding: 20px; border-radius: 10px; border: 1px solid #e1e4e8;'>
-        <h2 style='color: #1E88E5;'>📊 CRISPResso2 Analysis</h2>
-        <ul style='list-style-type: none; padding-left: 0;'>
-        <li>✓ Simplified CRISPResso2 execution</li>
-        <li>✓ Advanced results visualization</li>
-        <li>✓ AI-powered interpretation of editing outcomes</li>
-        <li>✓ Experimental success evaluation</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-        st.page_link('pages/CRISPResso2_Analysis.py', label="Go to CRISPResso2 Analysis", icon="📊")
-    
-    # Educational section with enhanced styling
-    st.markdown("""
-    <div style='margin-top: 40px;'>
-    <h2 style='color: #1E88E5;'>📚 Educational Resources</h2>
-    <p>This assistant includes comprehensive educational resources to help you understand CRISPR technology:</p>
-    <ul>
-    <li>CRISPR terminology and concept explanations</li>
-    <li>Interactive visualization interpretations</li>
-    <li>Scientific references and literature</li>
-    <li>AI-powered Q&A for CRISPR-related questions</li>
-    </ul>
-    <p>Explore the educational sidebar to learn more about CRISPR genome editing.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Additional information
-    with st.expander("About this project"):
-        st.markdown("""
-        This AI Research Assistant is designed to make CRISPR genome editing more accessible by providing:
-        
-        1. **Intelligent guidance** through the complex process of guide RNA design and analysis
-        2. **Context-aware interpretation** of results based on experimental goals
-        3. **Educational resources** to help researchers understand CRISPR technology
-        
-        The assistant integrates with popular CRISPR tools (CHOPCHOP and CRISPResso2) and enhances them with 
-        AI capabilities to improve usability and insight generation.
-        """)
+    selected_page_key = st.sidebar.radio(
+        "Go to", 
+        page_options, 
+        index=default_index, 
+        format_func=lambda page_name: PAGES[page_name]["title"],
+        key="page_nav_radio"
+    )
+
+    # Educational sidebar (now potentially part of each page or a general utility)
+    # If create_educational_sidebar is meant to be always visible, ensure it uses st.sidebar elements.
+    # For now, assuming it's a general sidebar component.
+    create_educational_sidebar() 
+
+    # Display the selected page content
+    if selected_page_key and selected_page_key in PAGES:
+        PAGES[selected_page_key]["function"]()
+        # Update chat context with current page
+        if "chat_workflow_context" in st.session_state:
+            st.session_state.chat_workflow_context["current_page"] = selected_page_key
+    elif page_options: # Fallback to the first page if selection is somehow lost
+        PAGES[page_options[0]]["function"]()
+        if "chat_workflow_context" in st.session_state:
+            st.session_state.chat_workflow_context["current_page"] = page_options[0]
+    else:
+        st.error("No pages defined.")
+
+
+# Define pages (ensure this is defined before main() or imported)
+# Example structure:
+# PAGES = {
+# "home": {"title": "🏠 Home", "function": display_home_page},
+# "chopchop": {"title": "🧬 CHOPCHOP Guide Design", "function": chopchop_page_function_from_its_file},
+# ... etc.
+# }
 
 if __name__ == "__main__":
     main() 

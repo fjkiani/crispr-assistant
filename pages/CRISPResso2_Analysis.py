@@ -843,7 +843,7 @@ with tab4:
                 # Get enhanced summary from parser
                 if st.button("Generate Enhanced Summary"):
                     with st.spinner("Generating comprehensive analysis..."):
-                        summary = parser.generate_enhanced_summary()
+                        summary = parser.generate_enhanced_summary(provide_therapeutic_context=st.session_state.get('show_therapeutic_context', False))
                         st.session_state.crispresso_results["enhanced_summary"] = summary
                 
                 # Display the summary if available

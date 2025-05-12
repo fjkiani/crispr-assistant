@@ -552,9 +552,12 @@ class EnhancedResultParser:
         
         return evaluation
     
-    def generate_enhanced_summary(self) -> str:
+    def generate_enhanced_summary(self, provide_therapeutic_context: bool = False) -> str:
         """
         Generate an enhanced, context-aware summary of the results using LLM.
+        
+        Args:
+            provide_therapeutic_context (bool): Whether to include therapeutic context.
         
         Returns:
             String with enhanced summary
@@ -562,41 +565,91 @@ class EnhancedResultParser:
         # Collect the key data for the summary
         efficiency = self.get_editing_efficiency()
         top_alleles = self.get_top_alleles(5)  # Get top 5 alleles
-        nucleotide_analysis = self.analyze_nucleotide_changes()
+        nucleotide_analysis = self.analyze_nucleotide_changes() if self.experiment_type == "base_editing" else {}
         indel_analysis = self.analyze_indel_patterns()
         evaluation = self.evaluate_experiment_success()
         
         # Create a data package for the LLM
         data_package = {
             "experiment_type": self.experiment_type,
+            "crispresso_reference_name": self.results.get("info", {}).get("Reference_Name", "Not specified"),
+            "total_reads_analyzed": self.results.get("info", {}).get("Total", "Not specified"),
             "efficiency_metrics": efficiency,
             "top_alleles": top_alleles,
             "nucleotide_analysis": nucleotide_analysis,
             "indel_analysis": indel_analysis,
-            "evaluation": evaluation,
-            "expected_outcomes": EXPECTED_OUTCOMES[self.experiment_type]
+            "evaluation": {
+                "rating": evaluation.get("rating"),
+                "assessment": evaluation.get("assessment")
+            },
+            "expected_outcomes_for_this_experiment_type": EXPECTED_OUTCOMES.get(self.experiment_type, {})
         }
         
         # Create a prompt for the LLM
-        prompt = f"""
-        As a genome editing expert, provide a clear, concise, and scientifically accurate summary of these CRISPR experiment results.
-        
-        EXPERIMENT TYPE: {self.experiment_type}
-        
-        RESULT DATA:
+        prompt = f"""As an expert computational biologist specializing in CRISPR data analysis, provide a comprehensive and insightful interpretation of the following CRISPR experiment results for the reference '{data_package['crispresso_reference_name']}'.
+        The experiment type is: {self.experiment_type}.
+
+        EXPERIMENTAL DATA:
         {json.dumps(data_package, indent=2)}
+
+        Please structure your analysis clearly. Use markdown for formatting.
+        Start with an "Overall Assessment" of editing success based on the provided evaluation rating and key efficiency metrics.
         
-        Please include:
-        1. A clear assessment of the editing efficiency and outcome quality
-        2. Interpretation of the results in context of the experiment type
-        3. Notable patterns or findings in the data
-        4. How these results compare to expected outcomes for this type of experiment
-        5. Key recommendations for the researcher
+        Then, for each relevant data section below, provide a detailed interpretation:
         
-        Your summary should be comprehensive but concise (4-6 paragraphs), focusing on the most important findings.
-        Use specific numbers and percentages when referring to the data.
-        Provide practical, actionable insights for the researcher.
+        1.  **Editing Efficiency:**
+            *   Summarize the key efficiency metrics (e.g., overall modification, NHEJ/HDR/Substitution rates, frameshift rate).
+            *   Interpret what these percentages mean in the context of a '{self.experiment_type}' experiment.
+            *   Are these rates generally considered high, moderate, or low for this type of experiment?
+
+        2.  **Top Alleles & Editing Outcomes:**
+            *   Describe the most frequent unmodified and modified alleles. What are their characteristics (e.g., type of indel, size, specific base change)?
+            *   For a '{self.experiment_type}' experiment, do these top alleles represent the desired outcome (e.g., frameshifts for knockout, precise HDR integration, correct base conversion)?
+            *   Discuss the heterogeneity of the edited population based on these top alleles.
+
+        3.  **Indel Patterns (if applicable, especially for NHEJ/knockout):**
+            *   Summarize key findings from the indel analysis (e.g., common deletion/insertion sizes, hotspots).
+            *   What do these patterns suggest about the repair mechanisms or guide activity?
+
+        4.  **Nucleotide-Level Changes (critically important for Base Editing, may be relevant for others if substitutions are high):**
+            *   If base editing: What is the efficiency of the desired A>G or C>T conversion at the target site(s)? Are there significant bystander edits (unintended conversions at nearby G/C or A/T bases)? What is the rate of undesired indels?
+            *   If not base editing but substitutions are noted: Are there any unexpected substitution patterns?
+
+        5.  **Comparison to Expected Outcomes:**
+            *   How do the key metrics (e.g., indel frequency, HDR rate, base conversion rate) compare to the general expectations for a '{self.experiment_type}' experiment (refer to `expected_outcomes_for_this_experiment_type` in the data if helpful)?
+
+        Finally, conclude with:
+        - **Key Conclusions:** Summarize the 2-3 most important takeaways from this dataset regarding the success and nature of the editing.
+        - **Actionable Recommendations:** Provide 2-3 specific, actionable recommendations for the researcher based *solely* on these CRISPResso2 results (e.g., proceed with clonal isolation, optimize gRNA, repeat with different conditions, perform off-target analysis next, validate functional consequence). 
+
+        Your interpretation should be detailed, scientifically sound, and easy for a researcher to understand. Use specific values from the data to support your points. Focus only on the provided data.
         """
+        
+        if provide_therapeutic_context:
+            prompt += f"""
+
+### Therapeutic Development Contextual Analysis (based *only* on these on-target CRISPResso2 results):
+Now, as an expert in translating CRISPR editing results into therapeutic development insights, provide additional context for a '{self.experiment_type}' experiment targeting '{data_package.get("crispresso_reference_name", "the target gene")}' for potential therapeutic application.
+
+A. Therapeutic Efficacy Implications:
+   - Based on the observed editing efficiency (e.g., NHEJ % from overall modification, HDR %, base conversion %), how do these on-target results align with achieving a therapeutically meaningful level of gene modification in a potential cell product? 
+   - Discuss the importance of the specific allele profile (e.g., high percentage of frameshifts for knockout; precise HDR for knock-in; clean, high-efficiency base conversion for base editing) for therapeutic potency and predictability of the functional outcome.
+
+B. On-Target Safety Profile & Manufacturability Hints:
+   - While these results primarily show on-target editing, what aspects (e.g., very high indel rates or complex rearrangements if implied by alleles in base editing; significant NHEJ byproducts in HDR; high heterogeneity of edited alleles) might raise early flags for downstream safety assessments or manufacturability (e.g., product consistency) if this were a therapeutic candidate?
+   - What types of *additional* off-target analyses (not covered by CRISPResso2 here, e.g., GUIDE-seq) would be critical next steps for a therapeutic program based on these on-target results?
+
+C. Potential for Durability of Therapeutic Effect:
+   - Based *only* on the on-target allele characteristics (e.g., types of indels, precision of HDR or base edits), are there any inferences that can be drawn about the potential for a durable therapeutic effect (e.g., likelihood of stable knockout, risk of reversion for specific edits if applicable)?
+
+D. Cell Product Considerations (Ex Vivo Editing Context):
+   - If these results were from *ex vivo* editing of cells intended for therapy (e.g., T-cells, HSCs), how might the observed on-target editing efficiency and the purity of the desired edited alleles impact considerations like the required cell dose for patients, potential for engraftment, or the need for cell enrichment strategies post-editing?
+
+E. Overall Therapeutic Perspective (from on-target data):
+   - Based *strictly on these on-target CRISPResso2 results*, what is your initial perspective on the suitability of this editing outcome for advancing a therapeutic program? What are the 1-2 most critical *on-target* characterizations or improvements (if any indicated by this data) needed before focusing heavily on off-target effects or *in vivo* studies?
+
+Integrate these therapeutic considerations clearly, perhaps as a separate section or by weaving them into your main analysis points where appropriate, always emphasizing that these are interpretations of the provided *on-target* data.
+            """
         
         # Call the LLM
         summary = query_llm(prompt)
@@ -1052,7 +1105,7 @@ if __name__ == "__main__":
         
         # Generate enhanced summary
         print("\nGenerating enhanced summary...")
-        summary = parser.generate_enhanced_summary()
+        summary = parser.generate_enhanced_summary(args.advanced)
         print("\n=== Enhanced Result Summary ===")
         print(summary)
         

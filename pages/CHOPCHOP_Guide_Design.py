@@ -11,6 +11,9 @@ from pathlib import Path
 import importlib.util
 from tools.guide_interpreter import compare_guides, locate_guide_in_gene
 
+# Import literature analyzer
+from tools.literature_analyzer import get_literature_summary_for_therapeutic_context
+
 # Add the parent directory to the path so we can import from streamlit_app.py
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -267,7 +270,7 @@ def handle_gene_table_error(error_text, target_gene):
     return False
 
 # Add this function after handle_gene_table_error function around line 189
-def interpret_guide_properties(guide_data, target_gene, enzyme):
+def interpret_guide_properties(guide_data, target_gene, enzyme, provide_therapeutic_context=False):
     """
     Uses LLM to generate an interpretation of the guide RNA properties and scores.
     
@@ -275,11 +278,12 @@ def interpret_guide_properties(guide_data, target_gene, enzyme):
         guide_data (dict): Data for the selected guide
         target_gene (str): Name of the target gene
         enzyme (str): Selected CRISPR enzyme
+        provide_therapeutic_context (bool): Whether to include therapeutic context in the analysis.
         
     Returns:
         str: LLM-generated interpretation text
     """
-    # Create a detailed prompt for the LLM
+    # Base prompt
     prompt = f"""As a CRISPR expert, analyze this guide RNA for {target_gene} with {enzyme}:
 
 GUIDE SEQUENCE: {guide_data.get('seq', 'Unknown')}
@@ -290,13 +294,27 @@ SELF-COMPLEMENTARITY: {guide_data.get('self_comp', 'Unknown')} (lower is better)
 LOCATION: {guide_data.get('location', 'Unknown')} (e.g., exon, intron)
 
 Please provide:
-1. A concise evaluation of this guide's quality, mentioning pros and cons
-2. Explain what makes this a good or suboptimal guide for genome editing
-3. Recommendations for experimental design with this guide
-4. Any precautions needed for off-target effects
-
-Keep your response clear, specific and under 350 words.
+1. A concise evaluation of this guide's quality, mentioning pros and cons for general research.
+2. Explain what makes this a good or suboptimal guide for general genome editing.
+3. Recommendations for experimental design with this guide for basic research.
+4. Any precautions needed for off-target effects in a research context.
 """
+
+    if provide_therapeutic_context:
+        prompt += f"""
+
+Additionally, as a CRISPR THERAPEUTIC DEVELOPMENT expert, provide specific insights for its potential use in a therapeutic application targeting {target_gene}:
+A. Therapeutic Efficacy: How does this guide's efficiency score and targeting location (e.g., exon vs. intron, predicted functional impact) relate to achieving a therapeutically relevant level of gene modification for a knockout strategy? What is the importance of high on-target efficiency for cell product potency?
+B. Off-Target Risks & Safety: Given the specificity score, what are the potential off-target risks? What level of specificity is generally desired for therapeutic candidates? Crucially, what off-target validation methods (e.g., GUIDE-seq, CIRCLE-seq, digenome-seq) are essential before clinical consideration? Would you recommend exploring high-fidelity Cas enzyme variants or chemically modified sgRNAs with this guide?
+C. Durability of Effect: How might the predicted editing outcome (e.g., specific indels if this were a CRISPResso2 result, or the nature of the target site for CHOPCHOP) influence the potential for long-term functional knockout?
+D. Delivery Considerations: Are there any aspects of this guide (e.g., length, potential for complex secondary structures if self-complementarity is high) that might influence choice or efficiency of delivery vectors (e.g., AAV, LNP) commonly used for therapeutic applications?
+E. Overall Therapeutic Potential: Based on the above, provide a brief assessment of this guide's suitability for further pre-clinical development towards a therapeutic application, highlighting key next steps for de-risking.
+
+Integrate these therapeutic considerations into your overall analysis. Keep your response clear, specific, and structured (e.g., use headings for general and therapeutic sections).
+"""
+    else:
+        prompt += "\nKeep your response clear, specific and under 350 words."
+
     # Get interpretation from LLM
     try:
         interpretation = ask_llm(prompt)
@@ -716,9 +734,38 @@ Keep your response concise and practical, under 250 words.
                     interpretation = interpret_guide_properties(
                         guide_data=selected_guide,
                         target_gene=target_gene,
-                        enzyme=enzyme_used
+                        enzyme=enzyme_used,
+                        provide_therapeutic_context=st.session_state.get('show_therapeutic_context', False)
                     )
                     st.markdown(interpretation)
+                
+                # Literature Search Integration for Basic Results Tab
+                if st.session_state.get('show_therapeutic_context', False):
+                    st.subheader("Literature Context for Therapeutic Development")
+                    # Let's provide context for a couple of key challenges
+                    challenge_keywords = {
+                        "Efficacy & Functional Impact": "efficacy functional impact",
+                        "Off-Target Effects & Safety": "off-target safety validation",
+                        "Delivery Methods": "delivery methods T-cell therapy" # Example, can be more dynamic
+                    }
+                    
+                    for display_name, keywords in challenge_keywords.items():
+                        button_key = f"lit_search_{selected_guide_idx}_{keywords.replace(' ', '_')}"
+                        if st.button(f"Search Literature: {display_name}", key=button_key):
+                            with st.spinner(f"Searching literature for {target_gene} - {display_name}..."):
+                                research_area_context = "cancer immunotherapy gene editing" # Could be made more dynamic
+                                summary = get_literature_summary_for_therapeutic_context(
+                                    target_keyword=target_gene,
+                                    challenge_keyword=keywords,
+                                    research_area=research_area_context
+                                )
+                                st.session_state[f"lit_summary_{selected_guide_idx}_{keywords.replace(' ', '_')}"] = summary
+                        
+                        # Display stored summary if available
+                        summary_key = f"lit_summary_{selected_guide_idx}_{keywords.replace(' ', '_')}"
+                        if summary_key in st.session_state:
+                            with st.expander(f"Literature Summary: {target_gene} - {display_name}", expanded=False):
+                                st.markdown(st.session_state[summary_key])
             
             # Option to select this guide for experiment design
             if st.button("Use this Guide for Experiment Design"):
@@ -1091,7 +1138,8 @@ with tab4:
                         explanation = generate_llm_explanation(
                             guides[:5],  # Limit to top 5 guides for performance
                             gene_symbol if gene_symbol else None,
-                            experiment_type
+                            experiment_type,
+                            provide_therapeutic_context=st.session_state.get('show_therapeutic_context', False)
                         )
                         
                         # Store in session state
@@ -1361,7 +1409,7 @@ def locate_guide_in_gene(guide_seq, gene_symbol):
     return location
 
 # Function to get LLM explanation
-def generate_llm_explanation(guides, gene_symbol, experiment_type):
+def generate_llm_explanation(guides, gene_symbol, experiment_type, provide_therapeutic_context=False):
     """
     Generate a comprehensive LLM explanation for guides.
     
@@ -1369,55 +1417,80 @@ def generate_llm_explanation(guides, gene_symbol, experiment_type):
         guides (list): List of guide dictionaries
         gene_symbol (str): Target gene
         experiment_type (str): Type of experiment (knockout, knockin, base_editing)
+        provide_therapeutic_context (bool): Whether to include therapeutic context in the analysis.
         
     Returns:
         str: LLM-generated explanation
     """
-    # Create a detailed prompt for the LLM
-    prompt = f"""As a CRISPR expert, provide a comprehensive analysis of these guides for {gene_symbol if gene_symbol else 'my target'} for a {experiment_type} experiment:
+    # Base prompt for general research advice
+    prompt = f"""As a CRISPR expert, provide a comprehensive analysis of these top guides for {gene_symbol if gene_symbol else 'the specified target'} for a {experiment_type} experiment from a general research perspective:
 
-GUIDES:
+GUIDES OVERVIEW:
 """
     
-    # Add each guide's details
     for i, guide in enumerate(guides):
         prompt += f"""
 GUIDE {i+1}:
-- Sequence: {guide.get('seq', '')} (PAM: {guide.get('pam', '')})
+- Sequence: {guide.get('seq', 'Unknown')} (PAM: {guide.get('pam', 'Unknown')})
 - Efficiency Score: {guide.get('efficiency', 'N/A')}
 - Specificity Score: {guide.get('specificity', 'N/A')}
 - Location: {guide.get('location', 'N/A')}
 """
     
-    # Add specific questions based on experiment type
+    prompt += "\n### General Research Analysis:\n"
     if experiment_type == "knockout":
         prompt += """
-For this KNOCKOUT experiment:
-1. Which guide would you recommend and why?
-2. How should target location (exon vs. intron) influence my choice?
-3. What efficiency should I expect in mammalian cells?
-4. What controls would you recommend?
+For this KNOCKOUT experiment (general research focus):
+1. Based on the provided scores (efficiency, specificity, location), which of these guides would you recommend and why? 
+2. How should target location (e.g., exon vs. intron) generally influence guide choice for achieving a functional knockout in a research setting?
+3. What typical on-target efficiency might one aim for in standard mammalian cell line experiments for research purposes?
+4. What are crucial control experiments to include for validating a knockout in a research context?
 """
     elif experiment_type == "knockin":
         prompt += """
-For this KNOCK-IN experiment:
-1. Which guide cuts closest to my desired insertion site?
-2. What homology arm length would you recommend?
-3. What special considerations apply to HDR experiments?
-4. How should I design my donor template?
+For this KNOCK-IN experiment (general research focus):
+1. Which guide appears most suitable for precise integration, considering its scores and location? What are the key trade-offs?
+2. For research purposes, what factors influence homology arm design (length, symmetry)?
+3. What are common challenges and considerations for HDR-mediated knock-in experiments in cell lines?
+4. General advice on donor template design for research applications.
 """
     else:  # base_editing
         prompt += """
-For this BASE EDITING experiment:
-1. Which guide positions the target nucleotide in the editing window?
-2. What base editor would be most appropriate?
-3. What editing efficiency should I expect?
-4. How can I minimize off-target effects?
+For this BASE EDITING experiment (general research focus):
+1. Which guide best positions the target nucleotide within a typical editing window? What are the implications of its scores?
+2. What general factors guide the selection of a base editor (e.g., ABE, CBE) for a research target?
+3. What on-target editing efficiency is typically considered good for base editing in research settings?
+4. How can off-target base editing be assessed or minimized in a research context?
 """
-    
-    prompt += """
-Provide your analysis in a clear, structured format with distinct sections and include both technical details and practical advice. Format your answer with markdown headings and bullet points for readability.
+
+    if provide_therapeutic_context:
+        prompt += f"""
+
+### Therapeutic Development Contextual Analysis:
+Now, adopting the role of a CRISPR THERAPEUTIC DEVELOPMENT expert, please provide additional specific insights for the potential therapeutic application of these guides for {gene_symbol if gene_symbol else 'the specified target'}, focusing on a {experiment_type} strategy:
+
+A. Comparative Therapeutic Efficacy: 
+   - Considering these top guides, which one(s) show the most promise for therapeutic efficacy and why? Discuss the balance between on-target efficiency and predicted functional impact (e.g., exon targeting for knockout).
+   - How critical is maximizing on-target editing for producing a potent and effective cell-based therapy (e.g., for CAR-T, HSC editing)?
+
+B. Off-Target Risks & Safety Strategy for Therapeutics:
+   - Evaluate the specificity scores of these guides in the context of therapeutic safety. Which guides pose higher/lower off-target risks?
+   - What is the acceptable threshold for specificity when developing a CRISPR-based therapeutic? 
+   - Outline a strategy for comprehensive off-target analysis (e.g., mentioning in silico prediction, cell-based unbiased methods like GUIDE-seq/CIRCLE-seq/digenome-seq, and the importance of testing in relevant primary cells).
+   - When would you strongly recommend considering high-fidelity Cas enzymes or chemically modified sgRNAs for these guides if they were therapeutic candidates?
+
+C. Durability and Long-Term Functional Impact:
+   - For a {experiment_type} approach targeting {gene_symbol if gene_symbol else 'this target'}, how might the choice among these guides influence the likelihood of achieving a durable, long-term therapeutic effect? (e.g., cleaner edits, avoidance of hypomorphic alleles).
+
+D. Delivery & Manufacturability Considerations:
+   - Are there any properties of these guides (e.g., sequence complexity, self-complementarity if data were available) that might impact their suitability for common therapeutic delivery vectors (AAV, LNP) or large-scale sgRNA synthesis for clinical use?
+
+E. Overall Therapeutic Recommendation & De-risking:
+   - Provide an overall assessment: which guide(s), if any, would you prioritize for further pre-clinical therapeutic development and why?
+   - What are the key 2-3 de-risking experiments or validation steps you would recommend next for the most promising candidate(s) before advancing towards clinical trials?
 """
+
+    prompt += "\nProvide your analysis in a clear, structured format with distinct sections (General Research Analysis, Therapeutic Development Contextual Analysis) and use markdown headings and bullet points for readability.\n"
     
     # Get explanation from LLM
     try:

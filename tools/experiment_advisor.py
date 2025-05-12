@@ -491,7 +491,8 @@ def generate_protocol(
     guide_info: Optional[Dict[str, Any]] = None,
     target_gene: Optional[str] = None,
     cell_type: Optional[str] = None,
-    custom_options: Optional[Dict[str, Any]] = None
+    custom_options: Optional[Dict[str, Any]] = None,
+    provide_therapeutic_context: bool = False
 ) -> str:
     """
     Generate a customized experimental protocol using the LLM.
@@ -502,6 +503,7 @@ def generate_protocol(
         target_gene: Optional name of the target gene
         cell_type: Optional cell type for the experiment
         custom_options: Optional dictionary with custom experimental parameters
+        provide_therapeutic_context (bool): Whether to include therapeutic context.
         
     Returns:
         String containing the generated protocol
@@ -559,14 +561,34 @@ def generate_protocol(
     {json.dumps(custom_options, indent=2) if custom_options else "None specified"}
     
     Please provide a detailed protocol that includes:
-    1. A clear title and brief overview of the experiment
-    2. Materials and reagents needed
-    3. Step-by-step procedure with specific details and tips
-    4. Expected results and how to interpret them
-    5. Troubleshooting advice for common issues
-    
-    Format the protocol in a clear, professional manner that would be suitable for a laboratory notebook or methods section.
+    1. A clear title and brief overview of the experiment for general research.
+    2. Materials and reagents needed for general research.
+    3. Step-by-step procedure with specific details and tips for general research.
+    4. Expected results and how to interpret them in a research context.
+    5. Troubleshooting advice for common issues in research experiments.
     """
+    
+    if provide_therapeutic_context:
+        prompt += f"""
+
+    ### Therapeutic Development Considerations:
+    As a CRISPR therapeutic development expert, please add a distinct section or integrate comments covering the following for this {experiment_type} experiment targeting {target_gene if target_gene else 'the specified gene'} in {cell_type if cell_type else 'a relevant therapeutic cell model'}:
+
+    1.  **Delivery Vector Choices & Implications (Task 7.4.1):**
+        *   Discuss common delivery vector choices (e.g., AAV, LNP, electroporation of RNP, lentivirus) suitable for therapeutic applications of a {experiment_type} strategy in {cell_type if cell_type else 'relevant primary cells/in vivo models'}.
+        *   For each relevant delivery option, briefly outline its implications regarding efficiency, safety (e.g., integration risk, immunogenicity), payload capacity, and potential tropism, especially in the context of targeting {target_gene if target_gene else 'this gene'}.
+
+    2.  **Crucial Controls for Therapeutic Validation (Task 7.4.2):**
+        *   Beyond standard research controls, what *additional* control experiments are essential when developing this towards a therapeutic product?
+        *   Specifically detail controls for:
+            *   **On-target Efficacy & Function:** Validating robust on-target editing and the desired functional consequence (e.g., protein knockout, specific base correction) in a therapeutically relevant cell model (e.g., patient-derived cells, primary human cells if applicable).
+            *   **Comprehensive Off-Target Analysis:** Emphasize the need for unbiased, genome-wide off-target nomination methods (e.g., GUIDE-seq, CIRCLE-seq, digenome-seq, or others) and subsequent validation of top candidates. Discuss the importance of this for safety assessment.
+            *   **Safety/Potency Assays:** Suggest any specific safety assays (e.g., cell viability, transformation potential if applicable) or potency assays (demonstrating the therapeutic mechanism) that would be critical for this particular gene target and {experiment_type} approach.
+
+    Ensure these therapeutic considerations are clearly delineated from the general research protocol.
+    """
+    
+    prompt += "\nFormat the overall protocol in a clear, professional manner that would be suitable for a laboratory notebook or methods section, with clear headings for each part.\n"
     
     # Call the LLM
     protocol = query_llm(prompt)
