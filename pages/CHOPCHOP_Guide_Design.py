@@ -9,6 +9,7 @@ import time
 import tempfile
 from pathlib import Path
 import importlib.util
+from tools.guide_interpreter import compare_guides, locate_guide_in_gene
 
 # Add the parent directory to the path so we can import from streamlit_app.py
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -169,6 +170,51 @@ def create_educational_sidebar():
     
     return None
 
+# Add after imports but before page configuration
+def compare_guides(guides, gene_symbol=None):
+    """
+    Compare multiple guides and provide recommendations.
+    
+    Args:
+        guides (list): List of guide dictionaries
+        gene_symbol (str, optional): Target gene symbol for domain context
+        
+    Returns:
+        dict: Comparison results and recommendations
+    """
+    # Basic comparison logic
+    comparison = {
+        "recommendations": []
+    }
+    
+    # Sort guides by efficiency score
+    sorted_guides = sorted(guides, key=lambda g: float(g.get('efficiency', 0)), reverse=True)
+    
+    # Check if we have a clear winner
+    if len(sorted_guides) > 1:
+        top_efficiency = float(sorted_guides[0].get('efficiency', 0))
+        second_efficiency = float(sorted_guides[1].get('efficiency', 0))
+        
+        if top_efficiency > second_efficiency * 1.5:  # If top guide is 50% better
+            comparison["recommendations"].append(
+                f"Guide {sorted_guides[0].get('seq', '')} has significantly higher efficiency score ({top_efficiency})."
+            )
+    
+    # Check location distribution
+    exon_guides = [g for g in guides if g.get('location', '').lower() == 'exon']
+    if exon_guides and gene_symbol:
+        comparison["recommendations"].append(
+            f"For gene knockout in {gene_symbol}, prioritize guides targeting exons."
+        )
+    
+    # Add general recommendation based on guide count
+    if len(guides) >= 3:
+        comparison["recommendations"].append(
+            "Consider testing multiple guides experimentally to find the most effective one."
+        )
+    
+    return comparison
+
 # Set page configuration
 st.set_page_config(
     page_title="CHOPCHOP Guide Design - AI Research Assistant",
@@ -219,6 +265,44 @@ def handle_gene_table_error(error_text, target_gene):
             """)
         return True
     return False
+
+# Add this function after handle_gene_table_error function around line 189
+def interpret_guide_properties(guide_data, target_gene, enzyme):
+    """
+    Uses LLM to generate an interpretation of the guide RNA properties and scores.
+    
+    Args:
+        guide_data (dict): Data for the selected guide
+        target_gene (str): Name of the target gene
+        enzyme (str): Selected CRISPR enzyme
+        
+    Returns:
+        str: LLM-generated interpretation text
+    """
+    # Create a detailed prompt for the LLM
+    prompt = f"""As a CRISPR expert, analyze this guide RNA for {target_gene} with {enzyme}:
+
+GUIDE SEQUENCE: {guide_data.get('seq', 'Unknown')}
+POSITION: {guide_data.get('start', 'Unknown')}-{guide_data.get('end', 'Unknown')}
+EFFICIENCY SCORE: {guide_data.get('efficiency', 'Unknown')} (higher is better)
+SPECIFICITY SCORE: {guide_data.get('specificity', 'Unknown')} (higher is better)
+SELF-COMPLEMENTARITY: {guide_data.get('self_comp', 'Unknown')} (lower is better)
+LOCATION: {guide_data.get('location', 'Unknown')} (e.g., exon, intron)
+
+Please provide:
+1. A concise evaluation of this guide's quality, mentioning pros and cons
+2. Explain what makes this a good or suboptimal guide for genome editing
+3. Recommendations for experimental design with this guide
+4. Any precautions needed for off-target effects
+
+Keep your response clear, specific and under 350 words.
+"""
+    # Get interpretation from LLM
+    try:
+        interpretation = ask_llm(prompt)
+        return interpretation
+    except Exception as e:
+        return f"Error generating interpretation: {str(e)}"
 
 # Page header
 st.markdown('<div class="main-header">CHOPCHOP Guide Design</div>', unsafe_allow_html=True)
@@ -1227,51 +1311,6 @@ with tab5:
                 else:
                     st.error("Could not retrieve sequence. The region might be too large or not available.")
 
-# Function to compare multiple guides
-def compare_guides(guides, gene_symbol=None):
-    """
-    Compare multiple guides and provide recommendations.
-    
-    Args:
-        guides (list): List of guide dictionaries
-        gene_symbol (str, optional): Target gene symbol for domain context
-        
-    Returns:
-        dict: Comparison results and recommendations
-    """
-    # Basic comparison logic
-    comparison = {
-        "recommendations": []
-    }
-    
-    # Sort guides by efficiency score
-    sorted_guides = sorted(guides, key=lambda g: float(g.get('efficiency', 0)), reverse=True)
-    
-    # Check if we have a clear winner
-    if len(sorted_guides) > 1:
-        top_efficiency = float(sorted_guides[0].get('efficiency', 0))
-        second_efficiency = float(sorted_guides[1].get('efficiency', 0))
-        
-        if top_efficiency > second_efficiency * 1.5:  # If top guide is 50% better
-            comparison["recommendations"].append(
-                f"Guide {sorted_guides[0].get('seq', '')} has significantly higher efficiency score ({top_efficiency})."
-            )
-    
-    # Check location distribution
-    exon_guides = [g for g in guides if g.get('location', '').lower() == 'exon']
-    if exon_guides and gene_symbol:
-        comparison["recommendations"].append(
-            f"For gene knockout in {gene_symbol}, prioritize guides targeting exons."
-        )
-    
-    # Add general recommendation based on guide count
-    if len(guides) >= 3:
-        comparison["recommendations"].append(
-            "Consider testing multiple guides experimentally to find the most effective one."
-        )
-    
-    return comparison
-
 # Function to locate a guide within a gene context
 def locate_guide_in_gene(guide_seq, gene_symbol):
     """
@@ -1385,42 +1424,4 @@ Provide your analysis in a clear, structured format with distinct sections and i
         explanation = ask_llm(prompt)
         return explanation
     except Exception as e:
-        return f"Error generating explanation: {str(e)}"
-
-# Function to get LLM-powered interpretations of guide properties
-def interpret_guide_properties(guide_data, target_gene, enzyme):
-    """
-    Uses LLM to generate an interpretation of the guide RNA properties and scores.
-    
-    Args:
-        guide_data (dict): Data for the selected guide
-        target_gene (str): Name of the target gene
-        enzyme (str): Selected CRISPR enzyme
-        
-    Returns:
-        str: LLM-generated interpretation text
-    """
-    # Create a detailed prompt for the LLM
-    prompt = f"""As a CRISPR expert, analyze this guide RNA for {target_gene} with {enzyme}:
-
-GUIDE SEQUENCE: {guide_data.get('seq', 'Unknown')}
-POSITION: {guide_data.get('start', 'Unknown')}-{guide_data.get('end', 'Unknown')}
-EFFICIENCY SCORE: {guide_data.get('efficiency', 'Unknown')} (higher is better)
-SPECIFICITY SCORE: {guide_data.get('specificity', 'Unknown')} (higher is better)
-SELF-COMPLEMENTARITY: {guide_data.get('self_comp', 'Unknown')} (lower is better)
-LOCATION: {guide_data.get('location', 'Unknown')} (e.g., exon, intron)
-
-Please provide:
-1. A concise evaluation of this guide's quality, mentioning pros and cons
-2. Explain what makes this a good or suboptimal guide for genome editing
-3. Recommendations for experimental design with this guide
-4. Any precautions needed for off-target effects
-
-Keep your response clear, specific and under 350 words.
-"""
-    # Get interpretation from LLM
-    try:
-        interpretation = ask_llm(prompt)
-        return interpretation
-    except Exception as e:
-        return f"Error generating interpretation: {str(e)}" 
+        return f"Error generating explanation: {str(e)}" 

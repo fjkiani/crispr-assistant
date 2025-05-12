@@ -1647,47 +1647,59 @@ def display_home_page():
     
     st.markdown('<div class="main-header">AI Research Assistant for CRISPR Genome Editing</div>', unsafe_allow_html=True)
     
-    # Introduction
+    # Introduction with custom styling
     st.markdown("""
+    <div style='padding: 20px; border-radius: 10px; background-color: #f0f8ff; margin-bottom: 30px;'>
     Welcome to the AI Research Assistant for CRISPR Genome Editing. This tool helps you design guides 
     with CHOPCHOP and analyze editing outcomes with CRISPResso2, with AI assistance at every step.
-    """)
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Main features in columns
+    # Main features in columns with enhanced styling
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown('<div class="subheader">CHOPCHOP Guide Design</div>', unsafe_allow_html=True)
         st.markdown("""
-        * AI-guided configuration of CHOPCHOP
-        * Intelligent guide RNA selection
-        * Enhanced visualization and interpretation
-        * Experimental design recommendations
-        """)
+        <div style='padding: 20px; border-radius: 10px; border: 1px solid #e1e4e8;'>
+        <h2 style='color: #1E88E5;'>🧬 CHOPCHOP Guide Design</h2>
+        <ul style='list-style-type: none; padding-left: 0;'>
+        <li>✓ AI-guided configuration of CHOPCHOP</li>
+        <li>✓ Intelligent guide RNA selection</li>
+        <li>✓ Enhanced visualization and interpretation</li>
+        <li>✓ Experimental design recommendations</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
         st.page_link('pages/CHOPCHOP_Guide_Design.py', label="Go to CHOPCHOP Guide Design", icon="🧬")
     
     with col2:
-        st.markdown('<div class="subheader">CRISPResso2 Analysis</div>', unsafe_allow_html=True)
         st.markdown("""
-        * Simplified CRISPResso2 execution
-        * Advanced results visualization
-        * AI-powered interpretation of editing outcomes
-        * Experimental success evaluation
-        """)
+        <div style='padding: 20px; border-radius: 10px; border: 1px solid #e1e4e8;'>
+        <h2 style='color: #1E88E5;'>📊 CRISPResso2 Analysis</h2>
+        <ul style='list-style-type: none; padding-left: 0;'>
+        <li>✓ Simplified CRISPResso2 execution</li>
+        <li>✓ Advanced results visualization</li>
+        <li>✓ AI-powered interpretation of editing outcomes</li>
+        <li>✓ Experimental success evaluation</li>
+        </ul>
+        </div>
+        """, unsafe_allow_html=True)
         st.page_link('pages/CRISPResso2_Analysis.py', label="Go to CRISPResso2 Analysis", icon="📊")
     
-    # Educational section
-    st.markdown('<div class="subheader">Educational Resources</div>', unsafe_allow_html=True)
+    # Educational section with enhanced styling
     st.markdown("""
-    This assistant includes comprehensive educational resources to help you understand CRISPR technology:
-    
-    * CRISPR terminology and concept explanations
-    * Interactive visualization interpretations
-    * Scientific references and literature
-    * AI-powered Q&A for CRISPR-related questions
-    
-    Explore the educational sidebar to learn more about CRISPR genome editing.
-    """)
+    <div style='margin-top: 40px;'>
+    <h2 style='color: #1E88E5;'>📚 Educational Resources</h2>
+    <p>This assistant includes comprehensive educational resources to help you understand CRISPR technology:</p>
+    <ul>
+    <li>CRISPR terminology and concept explanations</li>
+    <li>Interactive visualization interpretations</li>
+    <li>Scientific references and literature</li>
+    <li>AI-powered Q&A for CRISPR-related questions</li>
+    </ul>
+    <p>Explore the educational sidebar to learn more about CRISPR genome editing.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Additional information
     with st.expander("About this project"):

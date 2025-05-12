@@ -150,8 +150,9 @@ Without an API key, AI-powered assistance features will not work."""
 
             genai.configure(api_key=api_key)
             
-            model_name_to_use = args.model if args.model else 'gemini-pro' 
-            # You might want to use a newer/specific model like 'gemini-1.5-flash-latest' or 'gemini-1.5-pro-latest'
+            # Update model name to use the latest Gemini model
+            model_name_to_use = args.model if args.model else 'gemini-1.5-pro' 
+            # You might want to use a newer/specific model like 'gemini-1.5-pro-latest' or 'gemini-1.5-pro'
             # Check Google AI Studio for available model names.
             model = genai.GenerativeModel(model_name_to_use)
             
@@ -161,8 +162,8 @@ Without an API key, AI-powered assistance features will not work."""
             # For more advanced chat, you'd parse args.prompt back into a history list if possible,
             # or adjust get_llm_chat_response to pass structured history to the CLI if CLI supports it.
             
-            # For multimodal prompts with images (if your chosen model supports it, e.g., gemini-pro-vision or gemini-1.5-pro-latest):
-            if args.image and model_name_to_use in ['gemini-pro-vision', 'gemini-1.5-pro-latest', 'gemini-1.5-flash-latest']: # Add other vision-capable models
+            # For multimodal prompts with images (if your chosen model supports it):
+            if args.image and model_name_to_use in ['gemini-pro-vision', 'gemini-1.5-pro-latest', 'gemini-1.5-pro']: # Add other vision-capable models
                 try:
                     from PIL import Image # Ensure Pillow is installed: pip install Pillow
                     img = Image.open(args.image)

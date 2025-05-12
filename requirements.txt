@@ -1,0 +1,6 @@
+streamlit
+pandas
+python-dotenv
+google-generativeai
+# Add other specific versions if known, e.g., streamlit==1.20.0
+# Consider adding versions for all packages for reproducible deployments. 
