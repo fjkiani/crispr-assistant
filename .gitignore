@@ -1,8 +1,6 @@
-build
-.mypy_cache
-__pycache__
-*.pyc
-*.so
-CRISPResso2.egg-info
-dist
-tests/CRISPResso*
+genomeFiles/
+*.gtf
+*.bt2
+*.2bit
+chopchop/models/*.txt
+refGene.txt
